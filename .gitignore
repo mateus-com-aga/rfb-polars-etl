@@ -1,0 +1,27 @@
+# --- Dados ---
+data/raw/*
+data/silver/*
+!data/raw/.gitkeep
+!data/silver/.gitkeep
+
+# --- Python ---
+__pycache__/
+*.py[cod]
+*$py.class
+.venv/
+env/
+venv/
+.env
+
+# --- Testes ---
+.pytest_cache/
+.coverage
+htmlcov/
+
+# --- IDEs ---
+.vscode/
+.idea/
+
+# --- Sistema ---
+.DS_Store
+Thumbs.db
