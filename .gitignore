@@ -1,6 +1,4 @@
 # --- Dados ---
-data/raw/*
-data/silver/*
 !data/raw/.gitkeep
 !data/silver/.gitkeep
 
