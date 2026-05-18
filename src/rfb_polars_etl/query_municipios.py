@@ -9,8 +9,17 @@ def query_estabelecimentos():
         print(f"Erro: O arquivo {parquet_path} não existe. Rode o pipeline primeiro.")
         return
 
+    # Traduzir o código do município para o nome correspondente (opcional, mas melhora a legibilidade)
+    codigo_para_nome_municipio = {
+        "8771": 'NOVO HAMBURGO',
+        "8569": 'CAMAQUA',
+        "8541": 'BENTO GONCALVES',
+        "8791": 'PELOTAS',
+        "8963": 'VIAMAO',
+        "8839": 'SANTA CRUZ DO SUL'
+    }
     # Lista de municípios solicitada (mantidos como string para match com o schema)
-    municipios_alvo = ["8541", "8771", "8791", "8963", "8839", "8569"]
+    municipios_alvo = list(codigo_para_nome_municipio.keys())
 
     # Colunas desejadas
     colunas = [
@@ -27,16 +36,6 @@ def query_estabelecimentos():
         .select(colunas)
         .collect(engine="streaming")
     )
-
-    # Traduzir o código do município para o nome correspondente (opcional, mas melhora a legibilidade)
-    codigo_para_nome_municipio = {
-        "8771": 'NOVO HAMBURGO',
-        "8569": 'CAMAQUA',
-        "8541": 'BENTO GONCALVES',
-        "8791": 'PELOTAS',
-        "8963": 'VIAMAO',
-        "8839": 'SANTA CRUZ DO SUL'
-    }
 
     df = df.with_columns(
         pl.col("municipio")
