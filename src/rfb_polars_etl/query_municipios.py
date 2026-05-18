@@ -11,12 +11,13 @@ def query_estabelecimentos():
 
     # Traduzir o código do município para o nome correspondente (opcional, mas melhora a legibilidade)
     codigo_para_nome_municipio = {
-        "8771": 'NOVO HAMBURGO',
-        "8569": 'CAMAQUA',
-        "8541": 'BENTO GONCALVES',
+        "8785": 'PASSO FUNDO',
+        "8585": 'CANELA',
+        "8841": 'SANTA MARIA',
         "8791": 'PELOTAS',
-        "8963": 'VIAMAO',
-        "8839": 'SANTA CRUZ DO SUL'
+        "8683": 'GRAVATAI',
+        "8507": 'ALEGRETE',
+        "8847": 'SANTA ROSA'
     }
     # Lista de municípios solicitada (mantidos como string para match com o schema)
     municipios_alvo = list(codigo_para_nome_municipio.keys())
