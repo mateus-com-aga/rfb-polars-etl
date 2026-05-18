@@ -2,12 +2,13 @@
 PYTHON = poetry run python
 PYTEST = poetry run pytest
 
-.PHONY: help install run test benchmark clean
+.PHONY: help install run query test benchmark clean
 
 help:
 	@echo "Comandos disponíveis:"
 	@echo "  make install    - Instala dependências via Poetry"
 	@echo "  make run        - Executa o pipeline principal"
+	@echo "  make query      - Executa a consulta de municípios (requer silver)"
 	@echo "  make test       - Executa a suíte de testes unitários"
 	@echo "  make benchmark  - Executa a auditoria de performance e gera o gráfico"
 	@echo "  make clean      - Remove arquivos temporários e o output silver"
@@ -18,6 +19,9 @@ install:
 run:
 	$(PYTHON) -m rfb_polars_etl.main
 
+query:
+	$(PYTHON) -m rfb_polars_etl.query_municipios
+
 test:
 	$(PYTEST)
 
@@ -25,6 +29,6 @@ benchmark:
 	$(PYTHON) benchmarks/run_benchmark.py
 
 clean:
-	@if exist data\silver\*.parquet del /q data\silver\*.parquet
-	@if exist benchmarks\*.png del /q benchmarks\*.png
+	rm -f data/silver/*.parquet
+	rm -f benchmarks/*.png
 	@echo "Ambiente limpo."

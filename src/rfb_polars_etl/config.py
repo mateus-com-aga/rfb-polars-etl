@@ -2,7 +2,11 @@ import polars as pl
 from pathlib import Path
 
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
-RAW_DATA_PATH = BASE_DIR / "data" / "raw" / "*.csv"
+RAW_DATA_DIR = BASE_DIR / "data" / "raw"
+RAW_DATA_GLOBS = (
+    RAW_DATA_DIR / "*.csv",
+    RAW_DATA_DIR / "*.ESTABELE",
+)
 SILVER_DATA_PATH = BASE_DIR / "data" / "silver" / "estabelecimentos_consolidado.parquet"
 
 ESTABELECIMENTOS_SCHEMA = {

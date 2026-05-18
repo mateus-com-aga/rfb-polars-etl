@@ -1,10 +1,12 @@
 import time
 from pathlib import Path
-from rfb_polars_etl.config import RAW_DATA_PATH, SILVER_DATA_PATH
+from rfb_polars_etl.config import RAW_DATA_DIR, RAW_DATA_GLOBS, SILVER_DATA_PATH
 from rfb_polars_etl.pipeline import extract_estabelecimentos
 
 def main() -> None:
-    print(f"Analisando arquivos em: {RAW_DATA_PATH}")
+    print(f"Analisando arquivos em: {RAW_DATA_DIR}")
+    for pattern in RAW_DATA_GLOBS:
+        print(f"  - {pattern}")
 
     # Garante que o diretório 'silver' exista antes de tentar gravar
     Path(SILVER_DATA_PATH).parent.mkdir(parents=True, exist_ok=True)
@@ -12,7 +14,7 @@ def main() -> None:
     start_time = time.time()
 
     try:
-        extract_estabelecimentos(RAW_DATA_PATH, SILVER_DATA_PATH)
+        extract_estabelecimentos(RAW_DATA_GLOBS, SILVER_DATA_PATH)
         elapsed_time = time.time() - start_time
         print(f"Processamento concluído em {elapsed_time:.2f} segundos.")
         print(f"Arquivo consolidado salvo em: {SILVER_DATA_PATH}")

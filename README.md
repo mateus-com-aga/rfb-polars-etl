@@ -38,8 +38,104 @@ O teste de estresse foi realizado processando o dataset completo de Estabelecime
 
 ## 🛠️ Como Executar
 
-**Pré-requisitos:** Python 3.13+ e [Poetry](https://python-poetry.org/)
+**Pré-requisitos:** Python 3.12+ e [Poetry](https://python-poetry.org/)
 
-1. Clone o repositório e instale as dependências:
+### 1. Instalar dependências
+
 ```bash
+git clone <url-do-repositorio>
+cd rfb-polars-etl
 poetry install
+```
+
+Ou, com o Makefile:
+
+```bash
+make install
+```
+
+### 2. Preparar os dados brutos
+
+Baixe os arquivos de **Estabelecimentos** no site de [Dados Abertos da RFB](https://www.gov.br/receitafederal/pt-br/assuntos/orientacao-tributaria/cadastros/consultas/dados-publicos-cnpj) e coloque-os em:
+
+```
+data/raw/
+```
+
+O pipeline aceita **ambos** os formatos de nome:
+
+- `*.ESTABELE` (padrão oficial da RFB)
+- `*.csv` (se você renomear ou exportar com essa extensão)
+
+Exemplo de estrutura:
+
+```
+rfb-polars-etl/
+├── data/
+│   ├── raw/
+│   │   ├── F.K03200$Z.D41213.ESTABELE
+│   │   └── ...
+│   └── silver/
+│       └── estabelecimentos_consolidado.parquet   # gerado pelo pipeline
+└── src/
+```
+
+### 3. Executar o pipeline principal
+
+```bash
+make run
+```
+
+Equivalente direto:
+
+```bash
+poetry run python -m rfb_polars_etl.main
+```
+
+Saída esperada: `data/silver/estabelecimentos_consolidado.parquet`
+
+### 4. Consulta de municípios (opcional)
+
+Após gerar o Parquet silver:
+
+```bash
+make query
+```
+
+Ou:
+
+```bash
+poetry run python -m rfb_polars_etl.query_municipios
+```
+
+Gera `empresas_municipios_selecionados.xlsx` no diretório atual.
+
+### 5. Testes e benchmark
+
+```bash
+make test        # pytest (não exige dados reais)
+make benchmark   # requer arquivos em data/raw/
+make clean       # remove parquet silver e gráficos de benchmark
+```
+
+### Comandos Makefile
+
+| Comando | Descrição |
+| :--- | :--- |
+| `make help` | Lista todos os comandos |
+| `make install` | `poetry install` |
+| `make run` | Pipeline ETL principal |
+| `make query` | Consulta filtrada por municípios |
+| `make test` | Testes unitários |
+| `make benchmark` | Auditoria de performance |
+| `make clean` | Limpa outputs gerados |
+
+### Alternativa sem Poetry
+
+```bash
+python3 -m venv .venv
+source .venv/bin/activate
+pip install "polars[rtcompat]>=1.39" pyarrow xlsxwriter pytest
+pip install -e .
+PYTHONPATH=src python -m rfb_polars_etl.main
+```

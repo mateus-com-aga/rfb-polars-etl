@@ -1,19 +1,26 @@
 import polars as pl
+from collections.abc import Sequence
 from pathlib import Path
 
-#Importando config.py
 from rfb_polars_etl.config import ESTABELECIMENTOS_SCHEMA
 
-def extract_estabelecimentos(input_glob: Path | str, output_path: Path | str) -> None:
+def extract_estabelecimentos(
+    input_glob: Path | str | Sequence[Path | str],
+    output_path: Path | str,
+) -> None:
     """
-    Executa a estapa de extração do pipeline, lendo os arquivos .ESTABELE
-    em streaming. Lê CSVs mal formatados e consolidando-os em um único arquivo Parquet.
+    Executa a etapa de extração do pipeline, lendo arquivos .csv e .ESTABELE
+    em streaming e consolidando-os em um único arquivo Parquet.
     """
 
-    input_str = str(input_glob)
+    if isinstance(input_glob, (str, Path)):
+        sources: str | list[str] = str(input_glob)
+    else:
+        sources = [str(pattern) for pattern in input_glob]
+
     # 1. Fase de Extração (I/O Bound)
     lf = pl.scan_csv(
-        input_str,
+        sources,
         separator=";",
         has_header=False,
         encoding="utf8-lossy",
@@ -27,6 +34,9 @@ def extract_estabelecimentos(input_glob: Path | str, output_path: Path | str) ->
     lf_transformado = lf.with_columns([
         # Criando a coluna cnpj_completo concatenando as partes do CNPJ para cheve primária
         (pl.col("cnpj_basico") + pl.col("cnpj_ordem") + pl.col("cnpj_dv")).alias("cnpj_completo"),
+
+        # Criando a coluna CEP_NUM para concatenar o CEP com o número do logradouro conforme exemplo: CEP-NUMERO.
+        (pl.col("cep") + "-" + pl.col("numero")).alias("cep_numero"),
 
         # Convertendo as colunas de data para o formato Date do Polars
         pl.col("data_situacao_cadastral").str.to_date("%Y%m%d", strict=False),

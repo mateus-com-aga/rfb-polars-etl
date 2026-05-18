@@ -8,7 +8,7 @@ import matplotlib.pyplot as plt
 
 # Seus imports do projeto
 from rfb_polars_etl.pipeline import extract_estabelecimentos
-from rfb_polars_etl.config import RAW_DATA_PATH, SILVER_DATA_PATH
+from rfb_polars_etl.config import RAW_DATA_GLOBS, SILVER_DATA_PATH
 
 # Variáveis globais para monitoramento em background
 monitor_ativo = True
@@ -53,7 +53,7 @@ def medir_performance():
     inicio_tempo = time.time()
     
     # === EXECUÇÃO DO MOTOR ===
-    extract_estabelecimentos(str(RAW_DATA_PATH), str(SILVER_DATA_PATH))
+    extract_estabelecimentos(RAW_DATA_GLOBS, SILVER_DATA_PATH)
     # =========================
     
     fim_tempo = time.time()
