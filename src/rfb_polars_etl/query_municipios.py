@@ -1,5 +1,5 @@
 import polars as pl
-from rfb_polars_etl.config import SILVER_DATA_PATH
+from rfb_polars_etl.pipe_stab.config_estab import SILVER_DATA_PATH
 
 def query_estabelecimentos():
     # Usando o caminho absoluto definido centralizadamente no config.py

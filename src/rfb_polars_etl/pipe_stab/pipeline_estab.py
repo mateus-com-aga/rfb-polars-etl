@@ -2,16 +2,12 @@ import polars as pl
 from collections.abc import Sequence
 from pathlib import Path
 
-from rfb_polars_etl.config import ESTABELECIMENTOS_SCHEMA
+from rfb_polars_etl.pipe_stab.config_estab import ESTABELECIMENTOS_SCHEMA
 
 def extract_estabelecimentos(
     input_glob: Path | str | Sequence[Path | str],
     output_path: Path | str,
 ) -> None:
-    """
-    Executa a etapa de extração do pipeline, lendo arquivos .csv e .ESTABELE
-    em streaming e consolidando-os em um único arquivo Parquet.
-    """
 
     if isinstance(input_glob, (str, Path)):
         sources: str | list[str] = str(input_glob)
@@ -26,8 +22,7 @@ def extract_estabelecimentos(
         encoding="utf8-lossy",
         schema=ESTABELECIMENTOS_SCHEMA,
         infer_schema_length=0,
-        low_memory=True, #Ativa o modo de baixo uso de memória, útil para arquivos grandes, mas pode reduzir a velocidade de leitura. Use com cautela.
-        rechunk=True #Maelhorar performance de leitura, mas pode aumentar o uso de memória. Use com cautela.
+        low_memory=True,
     )
 
     # 2. Fase de Transformação (CPU Bound)
@@ -52,7 +47,7 @@ def extract_estabelecimentos(
     lf_transformado.sink_parquet(
         str(output_path),
         compression="zstd",
-        compression_level=3, #Nível de compressão zstd, onde 1 é o mais rápido e 22 é o mais comprimido. O nível 3 é um bom equilíbrio entre I/O x CPU.
-        row_group_size=100_000, #Viabiliza o skipping eficiente durante a leitura.
-        statistics=True, #Gera estatísticas para cada coluna, o que melhora o desempenho de leitura e filtragem.
+        compression_level=3,
+        row_group_size=100_000,
+        statistics=True,
     )

@@ -1,7 +1,7 @@
 import pytest
 import polars as pl
 from pathlib import Path
-from rfb_polars_etl.pipeline import extract_estabelecimentos
+from rfb_polars_etl.pipe_stab.pipeline_estab import extract_estabelecimentos
 
 # Fixture para isolar o ambiente de I/O de cada teste
 @pytest.fixture

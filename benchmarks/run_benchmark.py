@@ -7,8 +7,8 @@ from pathlib import Path
 import matplotlib.pyplot as plt
 
 # Seus imports do projeto
-from rfb_polars_etl.pipeline import extract_estabelecimentos
-from rfb_polars_etl.config import RAW_DATA_GLOBS, SILVER_DATA_PATH
+from rfb_polars_etl.pipe_stab.pipeline_estab import extract_estabelecimentos
+from rfb_polars_etl.pipe_stab.config_estab import RAW_DATA_GLOBS, SILVER_DATA_PATH
 
 # Variáveis globais para monitoramento em background
 monitor_ativo = True
