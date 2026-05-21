@@ -1,6 +1,6 @@
 # Variáveis para facilitar manutenção
 PYTHON = poetry run python
-PYTEST = poetry run pytest
+PYTEST = poetry run pytest -v
 
 .PHONY: help install run query test benchmark clean
 
