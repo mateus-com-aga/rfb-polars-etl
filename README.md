@@ -1,9 +1,9 @@
-# 🚀 Motor de Ingestão Out-of-Core: Dados da Receita Federal
+# 🚀 Motor de Ingestão Out-of-Core: Pipeline RFB com Polars
 
-Um pipeline de engenharia de dados focado em **otimização extrema e eficiência de I/O**, construído para processar a carga massiva de Estabelecimentos da Receita Federal do Brasil (RFB) utilizando **Polars** em modo Streaming.
+Um pipeline de engenharia de dados focado em **otimização extrema e eficiência de I/O**, construído para processar a carga massiva da Receita Federal do Brasil (RFB) utilizando **Polars** em modo Streaming. O projeto transforma mais de 15GB de dados brutos em insights filtrados em segundos, mesmo em hardware limitado.
 
 ## 📌 O Problema (Gargalo Tradicional)
-Os datasets da RFB ultrapassam **15 GB de dados brutos**. Abordagens tradicionais baseadas em memória (Eager) como `pandas.read_csv()` falham sistematicamente por:
+Os datasets da RFB (Empresas e Estabelecimentos) ultrapassam **15 GB de dados brutos**. Abordagens tradicionais baseadas em memória (Eager) falham sistematicamente por:
 1. **OOM (Out of Memory):** Tentativa de alocação total na RAM, resultando em crash do sistema.
 2. **I/O Bound Severo:** Parsing ineficiente de strings gigantes em hardware legado.
 3. **Escalabilidade Nula:** Impossibilidade de processar volumes maiores que a capacidade física da memória.
@@ -14,12 +14,23 @@ Este projeto utiliza uma arquitetura **Out-of-Core** construída em Rust via Pol
 
 * **Lazy API & Predicate Pushdown:** O plano de execução é otimizado e os filtros são aplicados antes de qualquer leitura física, reduzindo drasticamente o overhead.
 * **Streaming Engine:** Utilização do método `.sink_parquet()` para processamento em lotes (*chunks*), mantendo a estabilidade do sistema sob carga pesada.
-* **Resiliência de Hardware:** Detecção automática de conjunto de instruções e fallback para modo de compatibilidade (RT-Compat), permitindo execução em CPUs sem suporte a AVX2.
+* **Resiliência de Hardware:** Otimizado para CPUs legadas (ex: Ivy Bridge), utilizando `rtcompat` para garantir execução sem falhas de instruções vetoriais.
 * **Storage Layer (Parquet + Zstd):** Compactação agressiva e tipagem rigorosa, reduzindo 16 GB de dados brutos para ~3.8 GB em formato colunar otimizado.
+* **Arquitetura de Medalhão:**
+    *   **Raw:** Arquivos `.ESTABELE` e `.EMPRESA` originais.
+    *   **Silver:** Dados tipados, limpos e consolidados em Parquet.
+    *   **Gold:** Consultas de negócio (ex: filtragem por municípios e grupos de CEPs).
+
+## 🛠️ Funcionalidades Implementadas
+
+- **Pipeline de Estabelecimentos:** Limpeza de strings, geração de `cnpj_completo` e `cep_numero` para joins.
+- **Pipeline de Empresas:** Extração de Razão Social e Capital Social com tipagem correta.
+- **Enriquecimento (Query Engine):** Join otimizado entre bases Silver, filtragem por grupos de municípios e formatação automática de telefones (adição de nono dígito dinâmica).
+- **Testes Unitários:** Suíte de testes com Pytest simulando arquivos corrompidos, nulos e múltiplos arquivos para garantir a integridade do pipe.
 
 ## 📊 Benchmarks de Performance (Carga Real: 16.19 GB)
 
-O teste de estresse foi realizado processando o dataset completo de Estabelecimentos da Receita Federal.
+O teste de estresse foi realizado processando o dataset completo de **Estabelecimentos** da Receita Federal.
 
 | Métrica | Pandas (In-Memory) | Polars (Streaming/Out-of-Core) |
 | :--- | :--- | :--- |
@@ -58,8 +69,9 @@ make install
 
 Baixe os arquivos de **Estabelecimentos** no site de [Dados Abertos da RFB](https://www.gov.br/receitafederal/pt-br/assuntos/orientacao-tributaria/cadastros/consultas/dados-publicos-cnpj) e coloque-os em:
 
-```
-data/raw/
+```text
+data/raw/estab/  # Arquivos .ESTABELE
+data/raw/emp/    # Arquivos .EMPRESA
 ```
 
 O pipeline aceita **ambos** os formatos de nome:
