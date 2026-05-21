@@ -1,9 +1,12 @@
 import polars as pl
 from rfb_polars_etl.pipe_stab.config_estab import SILVER_DATA_PATH
+from rfb_polars_etl.pipe_emp.config_emp import SILVER_DATA_PATH_EMP
+from pathlib import Path
 
 def query_estabelecimentos():
     # Usando o caminho absoluto definido centralizadamente no config.py
     parquet_path = SILVER_DATA_PATH
+    gold_path = Path(__file__).resolve().parent.parent.parent / "data" / "gold"
 
     if not parquet_path.exists():
         print(f"Erro: O arquivo {parquet_path} não existe. Rode o pipeline primeiro.")
@@ -24,47 +27,58 @@ def query_estabelecimentos():
 
     # Colunas desejadas
     colunas = [
-        "cnpj_completo", "situacao_cadastral", "nome_fantasia", 
-        "logradouro", "numero", "bairro", "uf", "municipio", "cep", "ddd_1", "telefone_1"
+        "cnpj_basico", "cnpj_completo", "situacao_cadastral", 
+        "logradouro", "numero", "bairro", "uf",
+        "municipio", "cep", "ddd_1", "telefone_1"
     ]
 
     # Execução Lazy: O Polars só lerá as colunas solicitadas e as linhas que passarem no filtro de municipio e de situação cadastral
-    df = (
+    df_estab = (
         pl.scan_parquet(parquet_path)
         .filter((pl.col("municipio").is_in(municipios_alvo)) 
                 & (pl.col("situacao_cadastral") == 2) 
                 & (pl.col("ddd_1").str.starts_with("5")))
         .select(colunas)
-        .collect(engine="streaming")
     )
 
-    df = df.with_columns(
+    df_estab = df_estab.with_columns(
         pl.col("municipio")
         .cast(pl.Utf8)
         .replace(codigo_para_nome_municipio)
     )
 
     # Se o "telefone_1" começar com algo que nao seja 3, ele deve ser formatado com o 9 na frente.
-    df = df.with_columns(
+    df_estab = df_estab.with_columns(
         pl.when(pl.col("telefone_1").str.starts_with("3").not_())
-        .then(pl.lit("9") + pl.col("telefone_1"))
-        .otherwise(pl.col("telefone_1"))
+        .then(pl.col("ddd_1") + pl.lit("9") + pl.col("telefone_1"))
+        .otherwise(pl.col("ddd_1") + pl.col("telefone_1"))
         .alias("telefone_1")
     )
     
+    # Join com .parquet data/silver/empresas_consolidado.parquet para trazer a razão social usando duckdb
+    df_emp = (
+        pl.scan_parquet(SILVER_DATA_PATH_EMP)
+        .select(["cnpj_basico", "razao_social"])
+    )
 
+    df_final = (
+        df_estab
+        .join(df_emp, on="cnpj_basico", how="left")
+        .collect(engine="streaming")
+    )
 
     # Exibe o resultado e salva um CSV para conferência
-    print(f"Empresas encontradas: {df.height}")
-    print(df.head(10))
+    print(f"Empresas encontradas: {df_final.height}")
+    print(df_final.head(df_final.height))
 
-    # Opcional: exportar para CSV
-    # df.write_csv("empresas_municipios_selecionados.csv")
-    df.write_excel("empresas_municipios_selecionados.xlsx")
+    # Opcional: exportar para CSV na pasta gold.
+    df_final.write_csv(gold_path / "empresas_municipios_selecionados.csv")
 
-    print("Consulta concluída. Arquivo 'empresas_municipios_selecionados.xlsx' salvo com os resultados.")
+    # df_final.write_excel(gold_path / "empresas_municipios_selecionados.xlsx")
 
-    return df
+    print("Consulta concluída. Arquivo 'empresas_municipios_selecionados.csv' salvo com os resultados.")
+
+    return df_final
 
 if __name__ == "__main__":
     query_estabelecimentos()
