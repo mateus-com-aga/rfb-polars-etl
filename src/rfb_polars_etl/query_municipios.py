@@ -2,6 +2,7 @@ import polars as pl
 from rfb_polars_etl.pipe_stab.config_estab import SILVER_DATA_PATH
 from rfb_polars_etl.pipe_emp.config_emp import SILVER_DATA_PATH_EMP
 from pathlib import Path
+from rfb_polars_etl.grupos_cidades.pipeline_grupos import extract_cep_num
 
 def query_estabelecimentos():
     # Usando o caminho absoluto definido centralizadamente no config.py
@@ -14,13 +15,12 @@ def query_estabelecimentos():
 
     # Traduzir o código do município para o nome correspondente (opcional, mas melhora a legibilidade)
     codigo_para_nome_municipio = {
-        "8785": 'PASSO FUNDO',
-        "8585": 'CANELA',
-        "8841": 'SANTA MARIA',
-        "8791": 'PELOTAS',
-        "8683": 'GRAVATAI',
-        "8507": 'ALEGRETE',
-        "8847": 'SANTA ROSA'
+        "8589": 'CANOAS',
+        "8845": 'SANTANA DO LIVRAMENTO',
+        "8927": 'TAQUARA',
+        "8953": 'VACARIA',
+        "8559": 'CACHOEIRA DO SUL',
+        "8651": 'ESTEIO'
     }
     # Lista de municípios solicitada (mantidos como string para match com o schema)
     municipios_alvo = list(codigo_para_nome_municipio.keys())
@@ -29,7 +29,8 @@ def query_estabelecimentos():
     colunas = [
         "cnpj_basico", "cnpj_completo", "situacao_cadastral", 
         "logradouro", "numero", "bairro", "uf",
-        "municipio", "cep", "ddd_1", "telefone_1"
+        "municipio", "cep", "cep_numero",
+        "ddd_1", "telefone_1"
     ]
 
     # Execução Lazy: O Polars só lerá as colunas solicitadas e as linhas que passarem no filtro de municipio e de situação cadastral
@@ -54,6 +55,9 @@ def query_estabelecimentos():
         .otherwise(pl.col("ddd_1") + pl.col("telefone_1"))
         .alias("telefone_1")
     )
+
+    # Coluna CEP-NUMERO dos grupos de cidades para join
+    cep_numero = extract_cep_num().lazy()
     
     # Join com .parquet data/silver/empresas_consolidado.parquet para trazer a razão social usando duckdb
     df_emp = (
@@ -61,9 +65,15 @@ def query_estabelecimentos():
         .select(["cnpj_basico", "razao_social"])
     )
 
-    df_final = (
+    df_concat = (
         df_estab
         .join(df_emp, on="cnpj_basico", how="left")
+        # .collect(engine="streaming")
+    )
+
+    df_final = (
+        df_concat
+        .join(cep_numero, on="cep_numero", how="inner")
         .collect(engine="streaming")
     )
 

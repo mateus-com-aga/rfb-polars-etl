@@ -19,6 +19,9 @@ install:
 run:
 	$(PYTHON) -m rfb_polars_etl.main
 
+grupos:
+	$(PYTHON) -m rfb_polars_etl.grupos_cidades.pipeline_grupos
+
 query:
 	$(PYTHON) -m rfb_polars_etl.query_municipios
 
